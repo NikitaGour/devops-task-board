@@ -107,8 +107,11 @@ async function start() {
     console.log(`API listening on port ${port}`);
   });
 }
+if (process.env.NODE_ENV !== "test") {
+  start().catch((error) => {
+    console.error("Failed to start API:", error);
+    process.exit(1);
+  });
+}
 
-start().catch((error) => {
-  console.error("Failed to start API:", error);
-  process.exit(1);
-});
+export { app };
