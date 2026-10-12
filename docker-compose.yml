@@ -1,0 +1,21 @@
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: devops-task-db
+    environment:
+      POSTGRES_USER: devops
+      POSTGRES_PASSWORD: devops_local_only
+      POSTGRES_DB: devopsdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devops -d devopsdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres_data:
