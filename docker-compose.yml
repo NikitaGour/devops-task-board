@@ -16,6 +16,30 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    image: devops-task-backend:1.0
+    environment:
+      PORT: "5001"
+      DATABASE_URL: postgres://devops:devops_local_only@db:5432/devopsdb
+    ports:
+      - "5001:5001"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    image: devops-task-frontend:1.0
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+
