@@ -4,6 +4,8 @@ stages:
 
 backend_tests:
   stage: test
+  tags:
+    - mac-runner
   image: node:22-alpine
 
   services:
