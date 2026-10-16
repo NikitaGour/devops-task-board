@@ -1,8 +1,12 @@
 
-import { test } from "node:test";
+import { test, before } from "node:test";
 import assert from "node:assert/strict";
 import request from "supertest";
-import { app } from "../index.js";
+import { app, initDatabase } from "../index.js";
+
+before(async () => {
+  await initDatabase();
+});
 
 test("GET /health returns a successful database health check", async () => {
   const response = await request(app).get("/health");
@@ -35,3 +39,4 @@ test("POST /api/tasks rejects an empty title", async () => {
     error: "Task title is required",
   });
 });
+

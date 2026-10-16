@@ -90,8 +90,8 @@ app.patch("/api/tasks/:id", async (req, res) => {
   }
 });
 
-// Create the table and start the API
-async function start() {
+ // Initialize the database table
+async function initDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS tasks (
       id SERIAL PRIMARY KEY,
@@ -100,6 +100,11 @@ async function start() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+}
+
+// Start the API
+async function start() {
+  await initDatabase();
 
   const port = process.env.PORT || 5000;
 
@@ -107,6 +112,7 @@ async function start() {
     console.log(`API listening on port ${port}`);
   });
 }
+
 if (process.env.NODE_ENV !== "test") {
   start().catch((error) => {
     console.error("Failed to start API:", error);
@@ -114,4 +120,5 @@ if (process.env.NODE_ENV !== "test") {
   });
 }
 
-export { app };
+export { app, initDatabase };
+
