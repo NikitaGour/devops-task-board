@@ -20,7 +20,7 @@ services:
 
   backend:
     build: ./backend
-    image: devops-task-backend:1.0
+    image: ghcr.io/nikitagour/devops-task-backend:latest
     environment:
       PORT: "5001"
       DATABASE_URL: postgres://devops:devops_local_only@db:5432/devopsdb
@@ -33,7 +33,7 @@ services:
 
   frontend:
     build: ./frontend
-    image: devops-task-frontend:1.0
+    image: ghcr.io/nikitagour/devops-task-frontend:latest
     ports:
       - "8080:80"
     depends_on:
