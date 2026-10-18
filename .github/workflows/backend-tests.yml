@@ -1,4 +1,4 @@
-
+```yaml
 name: DevOps Task Board CI/CD
 
 on:
@@ -50,6 +50,15 @@ jobs:
       - name: Install backend dependencies
         run: npm ci
 
+      - name: Scan backend dependencies with Trivy
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: fs
+          scan-ref: backend
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          exit-code: "0"
+
       - name: Run backend tests
         run: npm test
 
@@ -74,6 +83,15 @@ jobs:
 
       - name: Install frontend dependencies
         run: npm ci
+
+      - name: Scan frontend dependencies with Trivy
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: fs
+          scan-ref: frontend
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          exit-code: "0"
 
       - name: Build frontend
         run: npm run build
@@ -127,4 +145,4 @@ jobs:
           tags: |
             ghcr.io/${{ steps.image.outputs.owner }}/devops-task-frontend:latest
             ghcr.io/${{ steps.image.outputs.owner }}/devops-task-frontend:${{ github.sha }}
-
+```
