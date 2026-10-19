@@ -2,6 +2,7 @@
 import express from "express";
 import pg from "pg";
 import dotenv from "dotenv";
+import * as promClient from "@prometheus-io/client";
 
 dotenv.config();
 
@@ -12,6 +13,80 @@ const pool = new pg.Pool({
 });
 
 app.use(express.json());
+
+// Collect default Node.js process metrics
+promClient.collectDefaultMetrics();
+
+// Track total HTTP requests
+const httpRequestsTotal = new promClient.Counter({
+  name: "http_requests_total",
+  help: "Total number of HTTP requests",
+  labelNames: ["method", "route", "status_code"],
+});
+
+// Track HTTP request duration
+const httpRequestDuration = new promClient.Histogram({
+  name: "http_request_duration_seconds",
+  help: "HTTP request duration in seconds",
+  labelNames: ["method", "route", "status_code"],
+  buckets: [0.005, 0.01, 0.05, 0.1, 0.5, 1, 2, 5],
+});
+
+// Track requests currently being processed
+const httpRequestsInProgress = new promClient.Gauge({
+  name: "http_requests_in_progress",
+  help: "Number of HTTP requests currently being processed",
+  labelNames: ["method"],
+});
+
+// Middleware to measure HTTP requests
+app.use((req, res, next) => {
+  // Don't count Prometheus scrapes as application requests
+  if (req.path === "/metrics") {
+    return next();
+  }
+
+  const method = req.method;
+  httpRequestsInProgress.inc({ method });
+
+  const endTimer = httpRequestDuration.startTimer({ method });
+
+  res.on("finish", () => {
+    // Use route templates to avoid creating a separate metric
+    // for every task ID
+    const route = req.route
+      ? `${req.baseUrl}${req.route.path}`
+      : "unmatched";
+
+    const statusCode = String(res.statusCode);
+
+    httpRequestsTotal.inc({
+      method,
+      route,
+      status_code: statusCode,
+    });
+
+    endTimer({
+      route,
+      status_code: statusCode,
+    });
+
+    httpRequestsInProgress.dec({ method });
+  });
+
+  next();
+});
+
+// Prometheus metrics endpoint
+app.get("/metrics", async (req, res) => {
+  try {
+    res.set("Content-Type", promClient.register.contentType);
+    res.end(await promClient.register.metrics());
+  } catch (error) {
+    console.error("Failed to generate metrics:", error);
+    res.status(500).send("Failed to generate metrics");
+  }
+});
 
 // Health check: verifies both API and database
 app.get("/health", async (req, res) => {
@@ -90,7 +165,7 @@ app.patch("/api/tasks/:id", async (req, res) => {
   }
 });
 
- // Initialize the database table
+// Initialize the database table
 async function initDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS tasks (
